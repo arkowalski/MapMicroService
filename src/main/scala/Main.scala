@@ -4,23 +4,40 @@ import scala.io.Source
 import com.typesafe.config.{Config, ConfigFactory}
 import org.json._
 
-object FindMapping extends App {
+object Main extends App {
 
   val filePath = "/home/arkadiusz/Applications/hmrc-development-environment/hmrc/"
+
+
+  println("Put in the path of your directory holding other repo's, for example I hold my repositories here:" +
+    "\"/home/arkadiusz/Applications/hmrc-development-environment/hmrc/\"")
+
+  val filePath2 = scala.io.StdIn.readLine()
   val routesFiles = getFileTree(new File(filePath)).filter(_.getName.endsWith("app.routes"))
   var serviceNameSet = Set[String]()
+  println("you have entered: " + filePath)
+  println("Loading data")
+  val results = startSearch()
 
-  //Start Program Here
-  startSearch().foreach(println)
+  println("now enter repo name, including all characters for details or write \"all\" for all results")
 
-  def startSearch(): List[Any] = {
+  var timeForExit = true
+  while (timeForExit) {
+    val currentScan = scala.io.StdIn.readLine()
+    currentScan match {
+      case "all" => results.foreach(println)
+      case "exit" => timeForExit = false
+      case potentialRepoName => println(results.find(_.repoName == potentialRepoName).getOrElse("Not Found, try again or type \"exit\" to stop"))
+    }
+  }
+
+  def startSearch(): List[Repo] = {
     println("Starting Search")
     val content = routesFiles.map(file => {
       serviceNameSet += getServiceName(file)
       createRepo(serviceNameSet.size, getServiceName(file), findScalaFiles(getServiceName(file),
         readFile(file)), findApplicationConf(file.getAbsolutePath.dropRight(10)).toList) match {
         case Some(repo) => repo
-        case None =>
       }
     }
     ).distinct.toList
