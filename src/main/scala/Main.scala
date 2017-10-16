@@ -31,18 +31,31 @@ object Main extends App {
     }
   }
 
-  def startSearch(): List[Repo] = {
-    println("Starting Search")
-    val content = routesFiles.map(file => {
-      serviceNameSet += getServiceName(file)
-      createRepo(serviceNameSet.size, getServiceName(file), findScalaFiles(getServiceName(file),
-        readFile(file)), findApplicationConf(file.getAbsolutePath.dropRight(10)).toList) match {
-        case Some(repo) => repo
+//  def startSearch(): List[Repo] = {
+//    println("Starting Search")
+//    val content = routesFiles.map(file => {
+//      serviceNameSet += getServiceName(file)
+//      createRepo(serviceNameSet.size, getServiceName(file), findScalaFiles(getServiceName(file),
+//        readFile(file)), findApplicationConf(file.getAbsolutePath.dropRight(10))) match {
+//        case Some(repo) => repo
+//      }
+//    }
+//    ).distinct.toList
+//    content
+//  }
+def startSearch(): List[Repo] = {
+      println("Starting Search")
+      val content = routesFiles.map(file => {
+        serviceNameSet += getServiceName(file)
+        createRepo(serviceNameSet.size, getServiceName(file), searchOtherRepoForMeInApplicationConf(getServiceName(file)), findApplicationConf(file.getAbsolutePath.dropRight(10))) match {
+          case Some(repo) => repo
+        }
       }
+      ).distinct.toList
+      content
     }
-    ).distinct.toList
-    content
-  }
+
+
 
   def createRepo(countSize: Int, repoName: String, receiveFrom: List[String], sendTo: List[String]): Option[Repo] = {
     if (serviceNameSet.size > countSize) None
@@ -65,22 +78,40 @@ object Main extends App {
     tempSet.toList
   }
 
-  def findScalaFiles(repoNameForSearch: String, list: List[String]): List[String] = {
-    val scalaFiles = getFileTree(new File(filePath)).filter(_.getName.endsWith(".scala")).toList.map(x => findService(x, list) match {
-      case Some(f) => f
-      case None => "dasdasd1'#,-asdas"
-    })
-    scalaFiles.distinct.filterNot(x => x == "dasdasd1'#,-asdas")
+//  def findScalaFiles(repoNameForSearch: String, list: List[String]): List[String] = {
+//    val scalaFiles = getFileTree(new File(filePath)).filter(_.getName.endsWith(".scala")).toList.map(x => findService(x, list) match {
+//      case Some(f) => f
+//      case None => "dasdasd1'#,-asdas"
+//    })
+//    scalaFiles.distinct.filterNot(x => x == "dasdasd1'#,-asdas")
+//  }
+
+  def searchOtherRepoForMeInApplicationConf(repoNameForSearch: String): List[String] = {
+    val repos = getFileTree(new File(filePath)).toList
+//    val appConfFiles = files.filter(_.getName.endsWith("application.conf")).
+//      toList.map(x => println(x.getAbsolutePath))
+//    val listOfServices = repos.foreach(service => findApplicationConf(service.getAbsolutePath))
+
+    val listOfServices = for(i <- repos) yield{
+      findApplicationConf(i.getAbsolutePath).contains(repoNameForSearch)
+      a
+    }
+
+    //.map(x => findApplicationConf(x.getAbsolutePath.dropRight(10)) )
+  val a = listOfServices.filterNot(result => result.size == 0).flatMap(x=>x)
+    a
+
+  //scalaFiles.distinct.filterNot(x => x == "dasdasd1'#,-asdas").flatMap(e=> e)
   }
 
-  def findApplicationConf(path: String): Array[String] = {
-    val myConfigFile = new File(path + "application.conf")
+  def findApplicationConf(path: String): List[String] = {
+    val myConfigFile = new File(path + "/conf/application.conf")
     val config = ConfigFactory.parseFile(myConfigFile)
 
     val prodMicroserviceServices = if (config.hasPath("Prod.microservice.services")) getProdMicroServiceServices(config) else ""
     val microserviceServices = if (config.hasPath("microservice.services")) getMicroserviceServices(config) else ""
     val combined = (prodMicroserviceServices + microserviceServices).replaceAll("[\\]\\[,\"]", " ").split(" ").filterNot(e => e == "")
-    combined
+    combined.toList
   }
 
   def getProdMicroServiceServices(config: Config): String = {
