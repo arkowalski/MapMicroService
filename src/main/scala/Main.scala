@@ -3,20 +3,20 @@ import java.io.File
 import repoModels.Repo
 
 import scala.io.Source
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
 import org.json._
 
 import util.control.Breaks._
 
 object Main extends App {
 
-  val filePath = "/Users/work/Desktop/hmrc/gitHub/repos"
+  val filePath = "/home/arkadiusz/Applications/hmrc-development-environment/hmrc/"
 
 
   println("Put in the path of your directory holding other repo's, for example I hold my repositories here:" +
     "\"/home/arkadiusz/Applications/hmrc-development-environment/hmrc/\"")
 
-  val filePath2 = scala.io.StdIn.readLine()
+  //val filePath2 = scala.io.StdIn.readLine()
 //  val routesFiles = getFileTree(new File(filePath)).filter(_.getName.endsWith("app.routes"))
   var serviceNameSet = Set[String]()
   println("you have entered: " + filePath)
@@ -40,6 +40,7 @@ object Main extends App {
 
     val filtered = repos.filterNot(_.startsWith("."))
     val data = for(i <- filtered) yield{
+      println(i)
              Repo(i, servicesThatCanTalkToMe(i, filtered.toList), servicesThatICanTalkTo(i))
       }
       data.toList
@@ -70,7 +71,7 @@ object Main extends App {
       }
       else {
         val myConfigFileContents = scala.io.Source.fromFile(path + "/conf/application.conf").mkString
-        val config = ConfigFactory.parseString(myConfigFileContents).resolve()
+        val config = ConfigFactory.parseString(myConfigFileContents).resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
 
         val prodMicroserviceServices = if (config.hasPath("Prod.microservice.services")) getProdMicroServiceServices(config) else ""
         val microserviceServices = if (config.hasPath("microservice.services")) getMicroserviceServices(config) else ""
