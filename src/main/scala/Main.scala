@@ -1,12 +1,16 @@
 import java.io.File
+
 import repoModels.Repo
+
 import scala.io.Source
 import com.typesafe.config.{Config, ConfigFactory}
 import org.json._
 
+import util.control.Breaks._
+
 object Main extends App {
 
-  val filePath = "/Users/work/Desktop/hmrc/gitHub/repos/"
+  val filePath = "/Users/work/Desktop/hmrc/gitHub/repos"
 
 
   println("Put in the path of your directory holding other repo's, for example I hold my repositories here:" +
@@ -34,8 +38,9 @@ object Main extends App {
   def startSearch(): List[Repo] = {
       val repos = new File(filePath).list()
 
-       val data = for(i <- repos.filterNot(_.startsWith("."))) yield{
-         Repo(i, servicesThatCanTalkToMe(i, repos.toList), servicesThatICanTalkTo(i))
+    val filtered = repos.filterNot(_.startsWith("."))
+    val data = for(i <- filtered) yield{
+             Repo(i, servicesThatCanTalkToMe(i, filtered.toList), servicesThatICanTalkTo(i))
       }
       data.toList
   }
@@ -58,13 +63,20 @@ object Main extends App {
 
 
     def getServicesThatRepoTalksTo(path: String): List[String] = {
-      val myConfigFile = new File(path + "/conf/application.conf")
-      val config = ConfigFactory.parseFile(myConfigFile)
+//      val myConfigFile = new File(path + "/conf/application.conf")
+//      val config = ConfigFactory.parseFile(myConfigFile)
+      if(! new File(path + "/conf/application.conf").exists()){
+        List("could not find application.conf")
+      }
+      else {
+        val myConfigFileContents = scala.io.Source.fromFile(path + "/conf/application.conf").mkString
+        val config = ConfigFactory.parseString(myConfigFileContents).resolve()
 
-      val prodMicroserviceServices = if (config.hasPath("Prod.microservice.services")) getProdMicroServiceServices(config) else ""
-      val microserviceServices = if (config.hasPath("microservice.services")) getMicroserviceServices(config) else ""
-      val combined = (prodMicroserviceServices + microserviceServices).replaceAll("[\\]\\[,\"]", " ").split(" ").filterNot(e => e == "")
-      combined.toList
+        val prodMicroserviceServices = if (config.hasPath("Prod.microservice.services")) getProdMicroServiceServices(config) else ""
+        val microserviceServices = if (config.hasPath("microservice.services")) getMicroserviceServices(config) else ""
+        val combined = (prodMicroserviceServices + microserviceServices).replaceAll("[\\]\\[,\"]", " ").split(" ").filterNot(e => e == "")
+        combined.toList
+      }
     }
 
     def getProdMicroServiceServices(config: Config): String = {
