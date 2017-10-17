@@ -1,12 +1,8 @@
 import java.io.File
 
 import repoModels.Repo
-
-import scala.io.Source
 import com.typesafe.config.{Config, ConfigFactory, ConfigResolveOptions}
 import org.json._
-
-import util.control.Breaks._
 
 object Main extends App {
 
@@ -53,7 +49,6 @@ object Main extends App {
       if (servicesThatRepoTalksTo.contains(me)) {
         services = i :: services
       }
-
     }
     services
   }
@@ -61,7 +56,6 @@ object Main extends App {
   def servicesThatICanTalkTo(me: String): List[String] = {
     getServicesThatRepoTalksTo(filePath + "/" + me)
   }
-
 
   def getServicesThatRepoTalksTo(path: String): List[String] = {
     //      val myConfigFile = new File(path + "/conf/application.conf")
