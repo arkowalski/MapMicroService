@@ -6,7 +6,7 @@ import org.json._
 
 object Main extends App {
 
-  val filePath = "/home/arkadiusz/Applications/hmrc-development-environment/hmrc/"
+  val filePath = "/home/arkadiusz/Applications/hmrc-development-environment/testFolder/"
 
 
   println("Put in the path of your directory holding other repo's, for example I hold my repositories here:" +
@@ -18,6 +18,7 @@ object Main extends App {
   println("you have entered: " + filePath)
   println("Loading data")
   val results = startSearch()
+  println(getProjectionStringForObjectDisplay(results.find(_.repoName == "agent-client-relationships").getOrElse(Repo("a",List("a"),List("b")))))
 
   println("now enter repo name, including all characters for details or write \"all\" for all results")
 
@@ -36,7 +37,7 @@ object Main extends App {
 
     val filtered = repos.filterNot(_.startsWith("."))
     val data = for (i <- filtered) yield {
-      println(i)
+      //println(i)
       Repo(i, servicesThatCanTalkToMe(i, filtered.toList), servicesThatICanTalkTo(i))
     }
     data.toList
@@ -70,16 +71,18 @@ object Main extends App {
       val prodMicroserviceServices = if (config.hasPath("Prod.microservice.services")) getProdMicroServiceServices(config) else ""
       val microserviceServices = if (config.hasPath("microservice.services")) getMicroserviceServices(config) else ""
       val combined = (prodMicroserviceServices + microserviceServices).replaceAll("[\\]\\[,\"]", " ").split(" ").filterNot(e => e == "")
-      combined.toList
+      combined.toList.distinct
     }
   }
 
   def getProdMicroServiceServices(config: Config): String = {
-    // println(config.getObject("Prod.microservice.services").unwrapped().keySet())
+    //println(config.getObject("Prod.microservice.services").unwrapped().keySet()
+    //).toString.replaceAll("[,\\[\\]]"," ").split(" ").toList.filterNot(e => e==" "))
 
     val prodMicroSerevices = new JSONObject(config.getConfig("Prod.microservice.services").toString
       .replaceAll("play.\"\\$\\{appName\\}\".", "replaced").drop(26).dropRight(2)).names()
     val successOrNot = if (prodMicroSerevices != null) prodMicroSerevices.toString else ""
+    println(successOrNot)
     successOrNot
   }
 
@@ -88,5 +91,16 @@ object Main extends App {
     ("play.\"\\$\\{appName\\}\".", "replaced").drop(19).dropRight(1)).names()
     val succesOrNot = if (microserviceServices != null) microserviceServices.toString else ""
     succesOrNot
+  }
+
+  def generateList(): Unit ={
+  }
+
+  def getProjectionStringForObjectDisplay(repo: Repo): IndexedSeq[String] ={
+    val list = for(i<- 0 until repo.sendTo.length) yield{
+      "{source: \""+repo.repoName+"\",target: \""+repo.sendTo(i)+"\",type: "+"\"licensing\""+"}"
+    }
+    //val listOfDisplayStrings = repo.sendTo.map(sendToRepo => s"{source: '${repo.repoName}',target: '${sendToRepo}', type: 'licensing'")
+    list
   }
 }

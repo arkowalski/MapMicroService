@@ -6,8 +6,9 @@ Inputs:
     exit                -> exit program
 
 
-What the project is?
+What the project is:
+
 The project discoverers connections between services based on their application.conf file found in conf.
 Find the services a repository has in its application.conf found in Prod.microservice.services or general microservice.services
 
-provides results in this format: Repo(repoName:String, receiveFrom: List[String], sendTo: List[String])
+Results are individual in format: Repo(repoName:String, receiveFrom: List[String], sendTo: List[String])
